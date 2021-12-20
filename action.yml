@@ -3,6 +3,9 @@ name: 'Load Container Action'
 description: 'Imports the image build caches and loads them for Docker CLI'
 
 inputs:
+  osg_series:
+    description: 'OSG release series used to install packages'
+    required: true
   repo:
     description: 'Input string that gets passed along to the docker build args'
     required: true
@@ -20,10 +23,11 @@ runs:
     id: generate-tag-list
     env:
       REPO: ${{ inputs.repo }}
+      OSG_SERIES: ${{ inputs.osg_series }}
     run: |
       docker_repo=${GITHUB_REPOSITORY/opensciencegrid\/docker-/opensciencegrid/}
       if [ -z "${{ inputs.tag_list }}" ]; then
-        tag_list=$docker_repo:$REPO,$docker_repo:$(date +%Y%m%d-%H%M)
+        tag_list=$docker_repo:$OSG_SERIES-$REPO,$docker_repo:$OSG_SERIES-$REPO-$(date +%Y%m%d-%H%M)
       else
         tag_list=${{ inputs.tag_list }}
       fi
@@ -34,15 +38,17 @@ runs:
     uses: actions/cache@v2
     with:
       path: /tmp/.buildx-cache
-      key: ${{ inputs.repo }}-buildx-${{ github.sha }}-${{ github.run_id }}
+      key: ${{ inputs.osg_series}}-${{ inputs.repo }}-buildx-${{ github.sha }}-${{ github.run_id }}
 
   - name: Load Docker images for use in Docker CLI
     uses: docker/build-push-action@v2.2.2
     with:
       push: False
       context: .
-      build-args: BASE_YUM_REPO=${{ inputs.repo }}
+      build-args: |
+        BASE_YUM_REPO=${{ inputs.repo }}
+        BASE_OSG_SERIES=${{ inputs.osg_series }}
       load: True # allow acces to built images through the Docker CLI
       tags: "${{ steps.generate-tag-list.outputs.taglist }}"
       cache-from: type=local,src=/tmp/.buildx-cache
-    
+
