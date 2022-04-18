@@ -9,6 +9,13 @@ inputs:
   repo:
     description: 'Input string that gets passed along to the docker build args'
     required: true
+  timestamp_tag:
+    description: >-
+      Timestamped tag name (e.g.,
+      "opensciencegrid/osgvo-docker-pilot3.6-release-YYYYMMDD-hhmm")
+      used to pass the Dockerfile as $TIMESTAMP_TAG
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -29,6 +36,7 @@ runs:
       build-args: |
         BASE_YUM_REPO=${{ inputs.repo }}
         BASE_OSG_SERIES=${{ inputs.osg_series }}
+        TIMESTAMP_TAG=${{ inputs.timestamp_tag }}
       load: True # allow acces to built images through the Docker CLI
       tags: "latest"
       cache-from: type=local,src=/tmp/.buildx-cache
