@@ -9,6 +9,10 @@ inputs:
   repo:
     description: 'Input string that gets passed along to the docker build args'
     required: true
+  context:
+    description: 'Path to container files, including Dockerfile'
+    required: false
+    default: '.'
   timestamp_tag:
     description: >-
       Timestamped tag name (e.g.,
@@ -22,11 +26,28 @@ runs:
   steps:
   - uses: actions/checkout@v2
 
+  - id: generate-image-name
+    shell: bash
+    run: |
+      if [[ ${{ inputs.context }} == "." ]] || \
+         [[ ${{ inputs.context }} == "./" ]]; then
+         # Try to guess the image name from our docker repo naming conventions
+         # E.g., opensciencegrid/docker-frontier-squid
+         IMAGE_NAME=${GITHUB_REPOSITORY/opensciencegrid\/docker-//}
+      elif [[ -d ${{ inputs.context }} ]]; then
+         # Assume that the containing dir is the image name
+         IMAGE_NAME=$(basename ${{ inputs.context }})
+      else
+        echo "${{ inputs.context }} is not a directory"
+        exit 1
+      fi
+      echo "::set-output name=image::$IMAGE_NAME"
+
   - name: Import Docker images from cache
     uses: actions/cache@v2
     with:
       path: /tmp/.buildx-cache
-      key: ${{ inputs.osg_series}}-${{ inputs.repo }}-buildx-${{ github.sha }}-${{ github.run_id }}
+      key: ${{ steps.generate-image-name.outputs.image }}_${{ inputs.osg_series}}-${{ inputs.repo }}-buildx-${{ github.sha }}-${{ github.run_id }}
 
   - name: Load Docker images for use in Docker CLI
     uses: docker/build-push-action@v2.2.2
@@ -38,6 +59,6 @@ runs:
         BASE_OSG_SERIES=${{ inputs.osg_series }}
         TIMESTAMP_TAG=${{ inputs.timestamp_tag }}
       load: True # allow acces to built images through the Docker CLI
-      tags: "latest"
+      tags: ${{ steps.generate-image-name.outputs.image }}:latest
       cache-from: type=local,src=/tmp/.buildx-cache
 
