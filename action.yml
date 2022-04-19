@@ -9,30 +9,18 @@ inputs:
   repo:
     description: 'Input string that gets passed along to the docker build args'
     required: true
-  tag_list:
-    description: 'List of tags that gets passed along to the docker build args'
-    required: true
-    default: '' # set to an empty string
+  timestamp_tag:
+    description: >-
+      Timestamped tag name (e.g.,
+      "opensciencegrid/osgvo-docker-pilot3.6-release-YYYYMMDD-hhmm")
+      used to pass the Dockerfile as $TIMESTAMP_TAG
+    required: false
+    default: ''
 
 runs:
   using: "composite"
   steps:
   - uses: actions/checkout@v2
-
-  - name: Generate tag list
-    id: generate-tag-list
-    env:
-      REPO: ${{ inputs.repo }}
-      OSG_SERIES: ${{ inputs.osg_series }}
-    run: |
-      docker_repo=${GITHUB_REPOSITORY/opensciencegrid\/docker-/opensciencegrid/}
-      if [ -z "${{ inputs.tag_list }}" ]; then
-        tag_list=$docker_repo:$OSG_SERIES-$REPO,$docker_repo:$OSG_SERIES-$REPO-$(date +%Y%m%d-%H%M)
-      else
-        tag_list=${{ inputs.tag_list }}
-      fi
-      echo "::set-output name=taglist::$tag_list"
-    shell: bash
 
   - name: Import Docker images from cache
     uses: actions/cache@v2
@@ -48,7 +36,8 @@ runs:
       build-args: |
         BASE_YUM_REPO=${{ inputs.repo }}
         BASE_OSG_SERIES=${{ inputs.osg_series }}
+        TIMESTAMP_TAG=${{ inputs.timestamp_tag }}
       load: True # allow acces to built images through the Docker CLI
-      tags: "${{ steps.generate-tag-list.outputs.taglist }}"
+      tags: "latest"
       cache-from: type=local,src=/tmp/.buildx-cache
 
