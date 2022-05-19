@@ -46,6 +46,16 @@ runs:
         exit 1
       fi
       echo "::set-output name=image::$IMAGE_NAME"
+  
+  - id: generate-cache-file
+  shell: bash
+  run: |
+    if [[ ${{ inputs.cache }} == true ]]; then
+      CACHE_FILE="/tmp/.buildx-cache"
+    else
+      CACHE_FILE="/tmp/throwaway"
+    fi
+    echo "::set-output name=cachefile::$CACHE_FILE"
 
   - name: Import Docker images from cache
     uses: actions/cache@v2
