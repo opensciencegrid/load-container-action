@@ -25,6 +25,11 @@ inputs:
     required: false
     default: true
 
+outputs:
+  image_tag:
+    description: 'The image tag available through Docker CLI tools'
+    value: ${{ steps.generate-image-name.outputs.image }}:latest
+
 runs:
   using: "composite"
   steps:
