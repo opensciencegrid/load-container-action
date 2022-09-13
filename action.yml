@@ -46,7 +46,7 @@ runs:
         echo "${{ inputs.context }} is not a directory"
         exit 1
       fi
-      echo "::set-output name=image::$IMAGE_NAME"
+      echo "::set-output name=image::${IMAGE_NAME,,}"
 
   - name: Import Docker images from cache
     uses: actions/cache@v2
