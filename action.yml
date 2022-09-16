@@ -20,7 +20,11 @@ inputs:
       used to pass the Dockerfile as $TIMESTAMP_TAG
     required: false
     default: ''
-
+  image_name:
+    description: 'Name of the image'
+    required: false
+    default: ''
+    
 outputs:
   image_tag:
     description: 'The image tag available through Docker CLI tools'
@@ -34,7 +38,9 @@ runs:
   - id: generate-image-name
     shell: bash
     run: |
-      if [[ ${{ inputs.context }} == "." ]] || \
+      if [[ ${{ inputs.image_name }} != '' ]]; then
+          IMAGE_NAME="${{ inputs.image_name }}"
+      elif [[ ${{ inputs.context }} == "." ]] || \
          [[ ${{ inputs.context }} == "./" ]]; then
          # Try to guess the image name from our docker repo naming conventions
          # E.g., opensciencegrid/docker-frontier-squid
