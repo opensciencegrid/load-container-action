@@ -20,7 +20,11 @@ inputs:
       used to pass the Dockerfile as $TIMESTAMP_TAG
     required: false
     default: ''
-
+  image_name:
+    description: 'Name of the image'
+    required: false
+    default: ''
+    
 outputs:
   image_tag:
     description: 'The image tag available through Docker CLI tools'
@@ -34,11 +38,13 @@ runs:
   - id: generate-image-name
     shell: bash
     run: |
-      if [[ ${{ inputs.context }} == "." ]] || \
+      if [[ ${{ inputs.image_name }} != '' ]]; then
+          IMAGE_NAME="${{ inputs.image_name }}"
+      elif [[ ${{ inputs.context }} == "." ]] || \
          [[ ${{ inputs.context }} == "./" ]]; then
          # Try to guess the image name from our docker repo naming conventions
          # E.g., opensciencegrid/docker-frontier-squid
-         IMAGE_NAME=${GITHUB_REPOSITORY/opensciencegrid\/docker-//}
+         IMAGE_NAME=${GITHUB_REPOSITORY/opensciencegrid\/docker-//,,}
       elif [[ -d ${{ inputs.context }} ]]; then
          # Assume that the containing dir is the image name
          IMAGE_NAME=$(basename ${{ inputs.context }})
@@ -46,7 +52,7 @@ runs:
         echo "${{ inputs.context }} is not a directory"
         exit 1
       fi
-      echo "::set-output name=image::$IMAGE_NAME"
+      echo "::set-output name=image::${IMAGE_NAME,,}"
 
   - name: Import Docker images from cache
     uses: actions/cache@v2
