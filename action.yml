@@ -52,7 +52,7 @@ runs:
         echo "No image_name provided and ${{ inputs.context }} is not a directory"
         exit 1
       fi
-      echo "::set-output name=image::${IMAGE_NAME,,}"
+      echo "image=${IMAGE_NAME,,}" >> $GITHUB_OUTPUT
 
   - name: Import Docker images from cache
     uses: actions/cache@v2
